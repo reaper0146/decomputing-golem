@@ -1,1 +1,2 @@
-# decomputing-golem
+# golem-decomputing
+
