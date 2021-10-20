@@ -1,6 +1,6 @@
 # golem-decomputing
 
-1. install the yagna daemon using thee following command:
+1. Install the yagna daemon using thee following command:
     
     ```
     curl -sSf https://join.golem.network/as-requestor | bash -
@@ -57,7 +57,12 @@
     pip install yapapi
     ```
 
-9. Run 
+9. Creaete a docker container for the worker.py file
+
+10. 
+
+
+11. Run 
     ```
     python requestor.py
     ```
