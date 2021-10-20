@@ -49,11 +49,11 @@
     export YAGNA_APPKEY=insert-the-32-char-app-key-here
     ```
 
-8. Install the depencies using pip as the project requires and also install the following dependency
+8. Install the depencies using pip as the project requires or add to requirements.txt. Also install the yapapi dependency
     
     ```
     pip install -U pip
-    pip install requirements
+    pip install -r requirements.txt
     pip install yapapi
     ```
 
