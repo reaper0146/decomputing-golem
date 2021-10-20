@@ -59,7 +59,15 @@
 
 9. Creaete a docker container for the worker.py file
 
-10. 
+    ```
+    docker build . -t hash-cracker
+    gvmkit-build hash-cracker:latest
+    gvmkit-build hash-cracker:latest --push
+    ```
+
+    Note the hash of the image in the last step. 
+
+10. Replace the image hash with the hash obtained in previous step in the function async def main() of the requestor.py file (around line 53)
 
 
 11. Run 
