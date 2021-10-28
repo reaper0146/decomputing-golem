@@ -32,7 +32,7 @@ arg_parser.add_argument("--words", type=Path, default=Path("data/SCG_data.csv"))
 args = argparse.Namespace()
 
 ENTRYPOINT_PATH = "/golem/entrypoint/worker.py"
-TASK_TIMEOUT = timedelta(minutes=30)
+TASK_TIMEOUT = timedelta(minutes=29)
 
 
 def data(words_file: Path, chunk_size: int = 100_000) -> Iterator[Task]:
@@ -63,7 +63,7 @@ async def steps(context: WorkContext, tasks: AsyncIterable[Task]):
     context.send_file(str(args.hash), worker.HASH_PATH)
 
     async for task in tasks:
-        context.send_file(str(task.data), worker.WORDS_PATH)
+        context.send_file(task.data, worker.WORDS_PATH)
 
         context.run(ENTRYPOINT_PATH)
 
