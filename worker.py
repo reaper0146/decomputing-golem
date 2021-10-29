@@ -43,8 +43,8 @@ if __name__ == "__main__":
     result = ""
 
     ## example data importing
-    data = pd.read_csv(WORDS_PATH).drop('Unnamed: 0',1).to_numpy()[0:20,:1000]
-    data_rec = wdenoise(data[10,:], 'sym4',0.5)
+    data = pd.read_csv(WORDS_PATH).drop('Unnamed: 0',1).to_numpy()#[0:20,:1000]
+    data_rec = wdenoise(data, 'sym4',0.5)
     result = data_rec.tolist()
     print(type(data_rec))
 
