@@ -14,5 +14,6 @@ RUN pip install pywavelets
 
 
 COPY worker.py /golem/entrypoint/
+COPY SCG_data.csv /golem/input
 WORKDIR /golem/entrypoint
 

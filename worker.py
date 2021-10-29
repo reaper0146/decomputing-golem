@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 ENCODING = "utf-8"
 
 HASH_PATH = Path("golem/input/hash.json")
-WORDS_PATH = Path("golem/input/SCG_data.csv")
+DATA_PATH = Path("golem/input/SCG_data.csv")
 RESULT_PATH = Path("golem/output/result.json")
 
 def wdenoise(data, method, threshold):
@@ -43,8 +43,8 @@ if __name__ == "__main__":
     result = ""
 
     ## example data importing
-    data = pd.read_csv(WORDS_PATH).drop('Unnamed: 0',1).to_numpy()#[0:20,:1000]
-    data_rec = wdenoise(data, 'sym4',0.5)
+    data = pd.read_csv(DATA_PATH).drop('Unnamed: 0',1).to_numpy()[0:20,:1000]
+    data_rec = wdenoise(data[10,:], 'sym4',0.5)
     result = data_rec.tolist()
     print(type(data_rec))
 
