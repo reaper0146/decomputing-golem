@@ -41,7 +41,7 @@ def wdenoise(data, method, threshold):
 
 if __name__ == "__main__":
     result = ""
-
+    #test
     ## example data importing
     data = pd.read_csv(WORDS_PATH).drop('Unnamed: 0',1).to_numpy()#[0:20,:1000]
     data_rec = wdenoise(data, 'sym4',0.5)
