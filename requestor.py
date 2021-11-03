@@ -26,7 +26,7 @@ import worker
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("--hash", type=Path, default=Path("data/hash.json"))
 arg_parser.add_argument("--subnet", type=str, default="devnet-beta.2")
-arg_parser.add_argument("--words", type=Path, default=Path("data/SCG_data.csv"))
+arg_parser.add_argument("--data", type=Path, default=Path("data/SCG_data.csv"))
 
 # Container object for parsed arguments
 args = argparse.Namespace()
@@ -35,13 +35,13 @@ ENTRYPOINT_PATH = "/golem/entrypoint/worker.py"
 TASK_TIMEOUT = timedelta(minutes=29)
 
 
-def data(words_file: Path, chunk_size: int = 100_000) -> Iterator[Task]:
+def data(data_file: Path, chunk_size: int = 100_000) -> Iterator[Task]:
     """Split input data into chunks, each one being a single `Task` object.
 
     A single provider may compute multiple tasks.
     Return an iterator of `Task` objects.
     """
-    with words_file.open() as f:
+    with data_file.open() as f:
         chunk = []
         for line in f:
             chunk.append(line.strip())
@@ -60,10 +60,10 @@ async def steps(context: WorkContext, tasks: AsyncIterable[Task]):
     Tasks are provided from a common, asynchronous queue.
     The signature of this function cannot change, as it's used internally by `Executor`.
     """
-    context.send_file(str(args.hash), worker.HASH_PATH)
+    #context.send_file(str(args.hash), worker.HASH_PATH)
 
     async for task in tasks:
-        context.send_file(task.data, worker.WORDS_PATH)
+        context.send_file(task.data, worker.DATA_PATH)
 
         context.run(ENTRYPOINT_PATH)
 
@@ -77,7 +77,7 @@ async def steps(context: WorkContext, tasks: AsyncIterable[Task]):
 
             # Mark task as accepted and set its result
             with output_file.open() as f:
-                task.accept_result(result=json.load(f))
+                task.accept_result(result=open(f))
         finally:
             # Remove output file once it's no longer required
             if output_file.exists():
