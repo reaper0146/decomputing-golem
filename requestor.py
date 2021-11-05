@@ -10,7 +10,9 @@ import argparse
 import asyncio
 from datetime import timedelta
 from pathlib import Path
+from tempfile import gettempdir
 from typing import AsyncIterable, Iterator
+from uuid import uuid4
 
 from yapapi import Task, WorkContext
 from yapapi.log import enable_default_logger
@@ -62,7 +64,7 @@ async def steps(context: WorkContext, tasks: AsyncIterable[Task]):
         context.run(str(ENTRYPOINT_PATH))
 
         # Create a temporary file to avoid overwriting incoming results
-        output_file = NamedTemporaryFile()
+        output_file = Path(gettempdir()) / str(uuid4())
         context.download_file(str(worker.RESULT_PATH), output_file.name)
 
         # Pass the prepared sequence of steps to Executor
