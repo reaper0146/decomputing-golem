@@ -13,7 +13,7 @@ from pathlib import Path
 from tempfile import gettempdir
 from typing import AsyncIterable, Iterator
 from uuid import uuid4
-
+import json
 from yapapi import Task, WorkContext
 from yapapi.log import enable_default_logger
 from yapapi.payload import vm
@@ -77,7 +77,7 @@ async def steps(context: WorkContext, tasks: AsyncIterable[Task]):
 async def main():
     # Set of parameters for the VM run by each of the providers
     package = await vm.repo(
-        image_hash="1e53d1f82b4c49b111196fcb4653fce31face122a174d9c60d06cf9a",
+        image_hash="986cac78b5c5dd4e1f26a8d5eab4ef1c72aba6a32eeb086ff5b14a5f",
         min_mem_gib=1.0,
         min_storage_gib=2.0,
     )
