@@ -57,12 +57,12 @@
     pip install yapapi
     ```
 
-9. Creaete a docker container for the worker.py file
+9. Create a docker container for the worker.py file
 
     ```
-    docker build . -t hash-cracker
-    gvmkit-build hash-cracker:latest
-    gvmkit-build hash-cracker:latest --push
+    docker build . -t golem-test
+    gvmkit-build golem-test:latest
+    gvmkit-build golem-test:latest --push
     ```
 
     Note the hash of the image in the last step. 
