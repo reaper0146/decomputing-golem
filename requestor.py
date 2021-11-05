@@ -36,7 +36,15 @@ def data(words_file: Path, chunk_size: int = 100_000) -> Iterator[Task]:
     A single provider may compute multiple tasks.
     Return an iterator of `Task` objects.
     """
-    # TODO
+    with words_file.open() as f:
+        chunk = []
+        for line in f:
+            chunk.append(line.strip())
+            if len(chunk) == chunk_size:
+                yield Task(data=chunk)
+                chunk = []
+        if chunk:
+            yield Task(data=chunk)
 
 async def steps(context: WorkContext, tasks: AsyncIterable[Task]):
     """Prepare a sequence of steps which need to happen for a task to be computed.
@@ -46,7 +54,23 @@ async def steps(context: WorkContext, tasks: AsyncIterable[Task]):
     Tasks are provided from a common, asynchronous queue.
     The signature of this function cannot change, as it's used internally by `Executor`.
     """
-    # TODO
+    context.send_file(str(args.hash), str(worker.HASH_PATH))
+
+    async for task in tasks:
+        context.send_json(str(worker.WORDS_PATH), task.data)
+
+        context.run(str(ENTRYPOINT_PATH))
+
+        # Create a temporary file to avoid overwriting incoming results
+        output_file = NamedTemporaryFile()
+        context.download_file(str(worker.RESULT_PATH), output_file.name)
+
+        # Pass the prepared sequence of steps to Executor
+        yield context.commit()
+
+        # Mark task as accepted and set its result
+        task.accept_result(result=json.load(output_file))
+        output_file.close()
 
 async def main():
     # Set of parameters for the VM run by each of the providers
