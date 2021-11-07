@@ -9,12 +9,14 @@ This file contains the requestor part of our application. There are three areas 
 import argparse
 import asyncio
 from datetime import timedelta
+import json
+import math
 from pathlib import Path
 from tempfile import gettempdir
 from typing import AsyncIterable, Iterator
 from uuid import uuid4
-import json
-from yapapi import Task, WorkContext
+
+from yapapi import Golem, Task, WorkContext
 from yapapi.log import enable_default_logger
 from yapapi.payload import vm
 
@@ -29,8 +31,9 @@ arg_parser.add_argument("--words", type=Path, default=Path("data/words.txt"))
 # Container object for parsed arguments
 args = argparse.Namespace()
 
-ENTRYPOINT_PATH = Path("/golem/entrypoint/worker.py")
+ENTRYPOINT_PATH = "/golem/entrypoint/worker.py"
 TASK_TIMEOUT = timedelta(minutes=10)
+
 
 def data(words_file: Path, chunk_size: int = 100_000) -> Iterator[Task]:
     """Split input data into chunks, each one being a single `Task` object.
@@ -48,6 +51,7 @@ def data(words_file: Path, chunk_size: int = 100_000) -> Iterator[Task]:
         if chunk:
             yield Task(data=chunk)
 
+
 async def steps(context: WorkContext, tasks: AsyncIterable[Task]):
     """Prepare a sequence of steps which need to happen for a task to be computed.
 
@@ -56,33 +60,57 @@ async def steps(context: WorkContext, tasks: AsyncIterable[Task]):
     Tasks are provided from a common, asynchronous queue.
     The signature of this function cannot change, as it's used internally by `Executor`.
     """
-    context.send_file(str(args.hash), str(worker.HASH_PATH))
+    context.send_file(str(args.hash), worker.HASH_PATH)
 
     async for task in tasks:
-        context.send_json(str(worker.WORDS_PATH), task.data)
+        context.send_json(worker.WORDS_PATH, task.data)
 
-        context.run(str(ENTRYPOINT_PATH))
+        context.run(ENTRYPOINT_PATH)
 
         # Create a temporary file to avoid overwriting incoming results
         output_file = Path(gettempdir()) / str(uuid4())
-        context.download_file(str(worker.RESULT_PATH), output_file.name)
+        try:
+            context.download_file(worker.RESULT_PATH, str(output_file))
 
-        # Pass the prepared sequence of steps to Executor
-        yield context.commit()
+            # Pass the prepared sequence of steps to Executor
+            yield context.commit()
 
-        # Mark task as accepted and set its result
-        task.accept_result(result=json.load(output_file))
-        output_file.close()
+            # Mark task as accepted and set its result
+            with output_file.open() as f:
+                task.accept_result(result=json.load(f))
+        finally:
+            # Remove output file once it's no longer required
+            if output_file.exists():
+                output_file.unlink()
+
 
 async def main():
+
     # Set of parameters for the VM run by each of the providers
     package = await vm.repo(
-        image_hash="986cac78b5c5dd4e1f26a8d5eab4ef1c72aba6a32eeb086ff5b14a5f",
+        image_hash="6d4a4c8e73b938fea2ad5bdb998bb8af9ca790de473e3469c9e1a8f8",
         min_mem_gib=1.0,
         min_storage_gib=2.0,
     )
 
-    # TODO Run Executor using data and steps functions
+    async with Golem(budget=1, subnet_tag=args.subnet) as golem:
+
+        result = ""
+
+        async for task in golem.execute_tasks(
+            steps, data(args.words), payload=package, timeout=TASK_TIMEOUT
+        ):
+            # Every task object we receive here represents a computed task
+            if task.result:
+                result = task.result
+                # Exit early once a matching word is found
+                break
+
+        if result:
+            print(f"\nFound matching word: {result}\n")
+        else:
+            print("No matching words found.")
+
 
 if __name__ == "__main__":
     args = arg_parser.parse_args()
