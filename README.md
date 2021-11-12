@@ -1,5 +1,7 @@
 # golem-decomputing
 
+Youtube: https://www.youtube.com/watch?v=Zpe8Nfo4FyY
+
 1. Install the yagna daemon using thee following command:
     
     ```
