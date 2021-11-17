@@ -22,13 +22,11 @@ from yapapi.payload import vm
 
 import worker
 
-# CLI arguments definition
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("--hash", type=Path, default=Path("data/hash.json"))
 arg_parser.add_argument("--subnet", type=str, default="devnet-beta.2")
 arg_parser.add_argument("--words", type=Path, default=Path("data/words.txt"))
 
-# Container object for parsed arguments
 args = argparse.Namespace()
 
 ENTRYPOINT_PATH = "/golem/entrypoint/worker.py"
@@ -36,11 +34,7 @@ TASK_TIMEOUT = timedelta(minutes=10)
 
 
 def data(words_file: Path, chunk_size: int = 100_000) -> Iterator[Task]:
-    """Split input data into chunks, each one being a single `Task` object.
 
-    A single provider may compute multiple tasks.
-    Return an iterator of `Task` objects.
-    """
     with words_file.open() as f:
         chunk = []
         for line in f:
@@ -53,13 +47,7 @@ def data(words_file: Path, chunk_size: int = 100_000) -> Iterator[Task]:
 
 
 async def steps(context: WorkContext, tasks: AsyncIterable[Task]):
-    """Prepare a sequence of steps which need to happen for a task to be computed.
 
-    `WorkContext` is a utility which allows us to define a series of commands to
-    interact with a provider.
-    Tasks are provided from a common, asynchronous queue.
-    The signature of this function cannot change, as it's used internally by `Executor`.
-    """
     context.send_file(str(args.hash), worker.HASH_PATH)
 
     async for task in tasks:
@@ -67,26 +55,21 @@ async def steps(context: WorkContext, tasks: AsyncIterable[Task]):
 
         context.run(ENTRYPOINT_PATH)
 
-        # Create a temporary file to avoid overwriting incoming results
         output_file = Path(gettempdir()) / str(uuid4())
         try:
             context.download_file(worker.RESULT_PATH, str(output_file))
 
-            # Pass the prepared sequence of steps to Executor
             yield context.commit()
 
-            # Mark task as accepted and set its result
             with output_file.open() as f:
                 task.accept_result(result=json.load(f))
         finally:
-            # Remove output file once it's no longer required
             if output_file.exists():
                 output_file.unlink()
 
 
 async def main():
 
-    # Set of parameters for the VM run by each of the providers
     package = await vm.repo(
         image_hash="6d4a4c8e73b938fea2ad5bdb998bb8af9ca790de473e3469c9e1a8f8",
         min_mem_gib=1.0,
@@ -100,10 +83,8 @@ async def main():
         async for task in golem.execute_tasks(
             steps, data(args.words), payload=package, timeout=TASK_TIMEOUT
         ):
-            # Every task object we receive here represents a computed task
             if task.result:
                 result = task.result
-                # Exit early once a matching word is found
                 break
 
         if result:
@@ -118,12 +99,10 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     task = loop.create_task(main())
 
-    # yapapi debug logging to a file
     enable_default_logger(log_file="yapapi.log")
 
     try:
         loop.run_until_complete(task)
     except KeyboardInterrupt:
-        # Make sure Executor is closed gracefully before exiting
         task.cancel()
         loop.run_until_complete(task)
